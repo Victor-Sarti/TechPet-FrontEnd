@@ -282,8 +282,9 @@ export default function AgendamentoWizard({
               type="button"
               className="px-4 py-2 rounded-md text-white bg-emerald-600 hover:bg-emerald-700"
               onClick={handleConfirm}
+              
             >
-              Confirmar Agendamento
+              <a href="/agendamentos">Confirmar Agendamento</a>
             </button>
           )}
         </div>
