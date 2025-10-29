@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -12,6 +14,8 @@ const AuthPage: React.FC = () => {
       await new Promise((r) => setTimeout(r, 600));
       console.log("Login payload", payload);
       // Integração com API vai aqui
+      // Sucesso de login -> redireciona para o fluxo de agendamento
+      navigate("/agendar");
     } finally {
       setLoading(false);
     }
