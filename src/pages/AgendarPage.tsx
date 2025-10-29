@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AgendamentoWizard, { type AgendamentoPayload } from "../components/AgendamentoWizard";
+import AgendamentoWizard, { type AgendamentoPayload } from "../components/Agendamento";
 
 const AgendarPage: React.FC = () => {
   const navigate = useNavigate();
