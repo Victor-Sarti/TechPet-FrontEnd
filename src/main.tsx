@@ -8,6 +8,8 @@ import AuthPage from './pages/Login'
 import CadastroPage from './pages/CadastroPage'
 import AgendarPage from './pages/AgendarPage'
 import MeusAgendamentos from './pages/MeusAgendamentos'
+import LoginFuncionario from './pages/LoginFuncionario'
+import FuncionarioDashboard from './pages/FuncionarioDashboard'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -18,6 +20,8 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/cadastro" element={<CadastroPage />} />
         <Route path="/agendar" element={<AgendarPage />} />
         <Route path="/agendamentos" element={<MeusAgendamentos />} />
+        <Route path="/equipe/login" element={<LoginFuncionario />} />
+        <Route path="/equipe/dashboard" element={<FuncionarioDashboard />} />
       </Routes>
     </BrowserRouter> 
   </StrictMode>,
