@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import api from '../services/api'
+import { listFuncionarios } from '../services/funcionario'
 
 export default function FuncionarioLoginPage() {
   const navigate = useNavigate()
-  const [telefone, setTelefone] = useState('')
-  const [senha, setSenha] = useState('')
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,22 +15,42 @@ export default function FuncionarioLoginPage() {
     setLoading(true)
 
     const payload = {
-      telefone: telefone.trim(),
-      senha,
+      email: email.trim(),
     }
 
     try {
       // Aqui você deve chamar sua API de autenticação para funcionários (ex.: /api/funcionarios/login)
       // Exemplo: await axios.post('/api/funcionarios/login', payload)
       // Em caso de sucesso, navegar para o Dashboard do Funcionário
+      // Opção A confirmada: autenticação via Usuario
+      // Ajuste solicitado: validar acesso consultando /api/funcionario
+      const funcionarios = await listFuncionarios()
+      const found = funcionarios?.find?.((f: any) => String(f.email || f?.usuario?.email || '').toLowerCase() === email.trim().toLowerCase())
 
       console.log('Payload pronto para envio:', payload)
+      console.log('API baseURL:', (api.defaults.baseURL as string) || import.meta.env.VITE_API_URL)
 
-      // Simulação de sucesso (remova após integrar com o backend)
-      await new Promise((r) => setTimeout(r, 600))
-      navigate('/equipe/dashboard')
+      if (found) {
+        navigate('/equipe/dashboard')
+      } else {
+        setError('Email não encontrado entre os funcionários cadastrados.')
+      }
     } catch (err: unknown) {
-      setError('Falha ao autenticar. Verifique suas credenciais.')
+      const anyErr = err as any
+      const status = anyErr?.response?.status
+      const msg = anyErr?.response?.data?.message || anyErr?.response?.data || anyErr?.message
+      // Fallback dev: se endpoint de login não existir, tentar localizar funcionário por email
+      try {
+        const funcionarios = await listFuncionarios()
+        const found = funcionarios?.find?.((f: any) => String(f.email || f?.usuario?.email || '').toLowerCase() === email.trim().toLowerCase())
+        if (found) {
+          navigate('/equipe/dashboard')
+          return
+        }
+      } catch (_) {
+        // ignore fallback failure, show error below
+      }
+      setError(status ? `Erro ${status}: ${String(msg || 'Falha ao autenticar')}` : 'Falha ao autenticar. Verifique sua conexão/servidor.')
     } finally {
       setLoading(false)
     }
@@ -45,34 +66,18 @@ export default function FuncionarioLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="telefone" className="block text-sm font-medium text-slate-700">
-              Telefone
+            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+              Email
             </label>
             <input
-              id="telefone"
-              name="telefone"
-              type="tel"
-              autoComplete="tel"
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
               required
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              placeholder="(11) 91234-5678"
-              className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="senha" className="block text-sm font-medium text-slate-700">
-              Senha
-            </label>
-            <input
-              id="senha"
-              name="senha"
-              type="password"
-              required
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="Digite sua senha"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@empresa.com"
               className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>

@@ -9,7 +9,7 @@ import CadastroPage from './pages/CadastroPage'
 import AgendarPage from './pages/AgendarPage'
 import MeusAgendamentos from './pages/MeusAgendamentos'
 import LoginFuncionario from './pages/LoginFuncionario'
-import FuncionarioDashboard from './pages/FuncionarioDashboard'
+import FuncionarioDashboard from './pages/FuncinarioDashboard'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

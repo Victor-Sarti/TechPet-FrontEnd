@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { finalizarAgendamento } from '../services/agendamento'
 
 type Agendamento = {
   id: string
@@ -84,6 +85,7 @@ export default function FuncionarioDashboard() {
       setAgendamentos((prev) => prev.map((a) => (a.id === id ? { ...a, finalizado: true } : a)))
       // Aqui você deve chamar sua API para atualizar o agendamento (ex.: PATCH /api/agendamentos/:id { finalizado: true })
       // Exemplo: await fetch(`/api/agendamentos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ finalizado: true }) })
+      await finalizarAgendamento(Number(id))
     } catch (e) {
       setAgendamentos((prev) => prev.map((a) => (a.id === id ? { ...a, finalizado: false } : a)))
     }
