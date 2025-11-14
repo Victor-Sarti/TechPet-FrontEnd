@@ -1,186 +1,226 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { listAnimais } from "../services/animalService";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale/pt-BR";
 
-type Agendamento = {
-  id: string
-  dataInicio: string // ISO datetime
-  dataFinal: string // ISO datetime
-  servico: string
-  nomeDoPet: string
-  especieDoPet: string
-  nomeDoCliente: string
-  telefoneDoCliente: string
-  valorFinal: number
-  finalizado: boolean
-}
-
-function formatDateInput(date: Date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function formatHourRange(startISO: string, endISO: string) {
-  const s = new Date(startISO)
-  const e = new Date(endISO)
-  const fmt = (dt: Date) => dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return `${fmt(s)} - ${fmt(e)}`
-}
+type Animal = {
+  id: number;
+  nome: string;
+  especie: string;
+  raca: string;
+  dataNascimento: string;
+  servicoDesejado?: string;
+  observacoes?: string;
+};
 
 export default function FuncionarioDashboard() {
-  const navigate = useNavigate()
-  const [selectedDate, setSelectedDate] = useState<string>(formatDateInput(new Date()))
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>(() => {
-    const today = formatDateInput(new Date())
-    const tomorrow = (() => {
-      const d = new Date()
-      d.setDate(d.getDate() + 1)
-      return formatDateInput(d)
-    })()
+  const navigate = useNavigate();
+  const [animais, setAnimais] = useState<Animal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    const compose = (
-      id: string,
-      day: string,
-      start: string,
-      end: string,
-      servico: string,
-      pet: string,
-      especie: string,
-      cliente: string,
-      tel: string,
-      valor: number,
-    ): Agendamento => ({
-      id,
-      dataInicio: `${day}T${start}:00`,
-      dataFinal: `${day}T${end}:00`,
-      servico,
-      nomeDoPet: pet,
-      especieDoPet: especie,
-      nomeDoCliente: cliente,
-      telefoneDoCliente: tel,
-      valorFinal: valor,
-      finalizado: false,
-    })
+  useEffect(() => {
+    const carregarAnimais = async () => {
+      try {
+        setLoading(true);
+        const dados = await listAnimais();
+        console.log("Dados retornados pela API:", dados); // Adicione esta linha
 
-    return [
-      compose('1', today, '09:00', '09:45', 'Banho', 'Thor', 'Cão', 'Ana Souza', '(11) 91234-0001', 60),
-      compose('2', today, '10:00', '11:00', 'Tosa Completa', 'Mia', 'Gato', 'Carlos Lima', '(11) 91234-0002', 120),
-      compose('3', today, '11:15', '11:45', 'Banho', 'Luna', 'Cão', 'Beatriz Nunes', '(11) 91234-0003', 60),
-      compose('4', today, '13:30', '14:30', 'Hidratação', 'Simba', 'Cão', 'Paulo Mendes', '(11) 91234-0004', 90),
-      compose('5', today, '15:00', '16:00', 'Tosa Higiênica', 'Nina', 'Gato', 'Julia Alves', '(11) 91234-0005', 80),
-      compose('6', tomorrow, '09:00', '09:45', 'Banho', 'Bob', 'Cão', 'Rita Dias', '(11) 91234-0006', 60),
-    ]
-  })
+        setAnimais(dados);
+      } catch (err) {
+        console.error("Erro ao carregar animais:", err);
+        setError(
+          "Erro ao carregar a lista de animais. Tente novamente mais tarde."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const pendentesDoDia = useMemo(() => {
-    return agendamentos.filter((a) => !a.finalizado && a.dataInicio.slice(0, 10) === selectedDate)
-  }, [agendamentos, selectedDate])
+    carregarAnimais();
+  }, []);
 
-  const totalPendentes = pendentesDoDia.length
+ const formatarData = (dataString: string) => {
+  // Se a data já estiver no formato DD/MM/YYYY, apenas retorne
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataString)) {
+    return dataString;
+  }
+  
+  // Se não, tente formatar com date-fns
+  try {
+    return format(new Date(dataString), "dd/MM/yyyy", { locale: ptBR });
+  } catch (e) {
+    console.error('Erro ao formatar data:', e);
+    return dataString; // Retorna o valor original em caso de erro
+  }
+}
 
-  async function finalizar(id: string) {
-    try {
-      setAgendamentos((prev) => prev.map((a) => (a.id === id ? { ...a, finalizado: true } : a)))
-      // Aqui você deve chamar sua API para atualizar o agendamento (ex.: PATCH /api/agendamentos/:id { finalizado: true })
-      // Exemplo: await fetch(`/api/agendamentos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ finalizado: true }) })
-      await finalizarAgendamento(Number(id))
-    } catch (e) {
-      setAgendamentos((prev) => prev.map((a) => (a.id === id ? { ...a, finalizado: false } : a)))
+  const calcularIdade = (dataNascimento: string) => {
+  try {
+    let [dia, mes, ano] = dataNascimento.split('/').map(Number);
+    const hoje = new Date();
+    const nascimento = new Date(ano, mes - 1, dia); // mês é 0-indexado no JS
+    
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const mesAtual = hoje.getMonth();
+    const diaAtual = hoje.getDate();
+    
+    // Ajusta se ainda não fez aniversário este ano
+    if (mesAtual < (mes - 1) || (mesAtual === (mes - 1) && diaAtual < dia)) {
+      idade--;
     }
+    
+    return idade;
+  } catch (e) {
+    console.error('Erro ao calcular idade:', e);
+    return '?';
+  }
+}
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-slate-600">
+            Carregando animais cadastrados...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white p-6 rounded-lg shadow-md">
+          <div className="text-red-500 text-center">
+            <svg
+              className="mx-auto h-12 w-12"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <h3 className="mt-2 text-lg font-medium">Ocorreu um erro</h3>
+            <p className="mt-1 text-sm text-slate-600">{error}</p>
+            <div className="mt-6">
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-slate-900">Agenda de Serviços Diária</h1>
-          <div className="flex items-center gap-3">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Pets Cadastrados
+            </h1>
             <button
-              onClick={() => navigate('/equipe/login')}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              onClick={() => navigate("/equipe/agendamentos")}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
-              Sair
+              Ver Agendamentos
             </button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6">
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 flex items-end gap-4">
-            <div className="flex-1">
-              <label htmlFor="data" className="block text-sm font-medium text-slate-700">
-                Data
-              </label>
-              <input
-                id="data"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-              />
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          {animais.length === 0 ? (
+            <div className="text-center py-12">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M20 7l-8-4.5L4 7m16 0l-8 4.5M4 7v10l8 4.5m0-14.5v14.5m8-10v10l-8 4.5"
+                />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                Nenhum pet cadastrado
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Ainda não há pets cadastrados no sistema.
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <ul className="divide-y divide-gray-200">
+                {animais.map((animal) => (
+                  <li key={animal.id} className="border-b border-gray-200">
+                    <div className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-indigo-600 truncate">
+                          {animal.nome} - {animal.especie} ({animal.raca})
+                        </p>
+                        {animal.dataNascimento && (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            {calcularIdade(animal.dataNascimento)} anos
+                          </span>
+                        )}
+                      </div>
 
-          <div className="md:col-span-1">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="text-sm text-slate-500">Pendentes no dia</div>
-              <div className="mt-1 text-2xl font-semibold text-slate-900">{totalPendentes}</div>
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">
+                            Data de Nascimento:
+                          </span>{" "}
+                          {formatarData(animal.dataNascimento)}
+                        </p>
+                      </div>
+
+                      {animal.servicoDesejado && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">
+                              Serviço desejado:
+                            </span>{" "}
+                            {animal.servicoDesejado}
+                          </p>
+                        </div>
+                      )}
+
+                      {animal.observacoes && (
+                        <div className="mt-1">
+                          <p className="text-sm text-gray-500">
+                            <span className="font-medium">Observações:</span>{" "}
+                            {animal.observacoes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Horário</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Serviço</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Pet</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Cliente</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Valor</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {pendentesDoDia.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                    Nenhum agendamento pendente para a data selecionada.
-                  </td>
-                </tr>
-              ) : (
-                pendentesDoDia.map((a) => (
-                  <tr key={a.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-900 whitespace-nowrap">
-                      {formatHourRange(a.dataInicio, a.dataFinal)}
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">{a.servico}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      <div className="font-medium text-slate-900">{a.nomeDoPet}</div>
-                      <div className="text-sm text-slate-500">{a.especieDoPet}</div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      <div className="font-medium text-slate-900">{a.nomeDoCliente}</div>
-                      <div className="text-sm text-slate-500">{a.telefoneDoCliente}</div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">R$ {a.valorFinal.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => finalizar(a.id)}
-                        className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
-                      >
-                        Finalizar Serviço
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          )}
         </div>
       </main>
     </div>
-  )
+  );
 }
