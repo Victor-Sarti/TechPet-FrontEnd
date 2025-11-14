@@ -1,4 +1,7 @@
 import React, { useMemo, useState } from 'react';
+import { createCliente } from '../services/clienteService';
+import { createAnimal } from '../services/animalService';
+import { useNavigate } from 'react-router-dom';
 
 type FormState = {
   // Tutor (Cliente)
@@ -11,7 +14,7 @@ type FormState = {
   petNome: string;
   especie: string;
   raca: string;
-  idade: string; // manter como string para facilitar validação de input
+  dataNascimento: string; // Data de nascimento do pet no formato YYYY-MM-DD
 };
 
 type FormErrors = Partial<Record<keyof FormState, string>> & { geral?: string; sucesso?: string };
@@ -25,18 +28,19 @@ const initialState: FormState = {
   petNome: '',
   especie: '',
   raca: '',
-  idade: '',
+  dataNascimento: '',
 };
 
 const CadastroPage: React.FC = () => {
   const [values, setValues] = useState<FormState>(initialState);
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const progresso = useMemo(() => {
     // progresso simples: 2 blocos (Tutor e Pet). 0, 50, 100
     const tutorOk = Boolean(values.nome && values.email && values.telefone && values.senha && values.confirmarSenha);
-    const petOk = Boolean(values.petNome && values.especie && values.raca && values.idade);
+    const petOk = Boolean(values.petNome && values.especie && values.raca && values.dataNascimento);
     if (tutorOk && petOk) return 100;
     if (tutorOk || petOk) return 50;
     return 0;
@@ -71,49 +75,103 @@ const CadastroPage: React.FC = () => {
     if (!values.especie.trim()) er.especie = 'Informe a espécie.';
     if (!values.raca.trim()) er.raca = 'Informe a raça.';
 
-    if (!values.idade.trim()) er.idade = 'Informe a idade.';
-    else if (!/^\d+$/.test(values.idade)) er.idade = 'Apenas números.';
+    if (!values.dataNascimento.trim()) er.dataNascimento = 'Informe a data de nascimento.';
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(values.dataNascimento)) er.dataNascimento = 'Formato inválido. Use DD/MM/AAAA';
+    else {
+      const birthDate = new Date(values.dataNascimento);
+      const today = new Date();
+      if (birthDate > today) {
+        er.dataNascimento = 'A data não pode ser futura.';
+      }
+    }
 
     setErrors(er);
     return Object.keys(er).length === 0;
   };
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setErrors({});
-    if (!validate()) return;
+  const formatarDataParaBackend = (dataString: string): string => {
+  const [ano, mes, dia] = dataString.split('-');
+  return `${dia}/${mes}/${ano}`;
+};
 
-    setLoading(true);
-    try {
-      // Monte o payload conforme esperado pelo backend
-      const payload = {
+const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setErrors({});
+  if (!validate()) return;
+
+  setLoading(true);
+  try {
+    const clienteData = {
+      nome: values.nome.trim(),
+      email: values.email.trim(),
+      telefone: values.telefone.trim(),
+      senha: values.senha,
+    };
+
+    console.log('Dados do cliente a serem enviados:', clienteData);
+
+    // 1. Primeiro, criar o cliente
+    const cliente = await createCliente(clienteData);
+    console.log('Cliente criado com sucesso:', cliente);
+
+    if (cliente && cliente.id) {
+      
+      const dataNascimentoFormatada = formatarDataParaBackend(values.dataNascimento);
+
+      const animalData = {
+        nome: values.petNome.trim(),
+        especie: values.especie.trim(),
+        raca: values.raca.trim(),
+        dataNascimento: dataNascimentoFormatada,
         cliente: {
-          nome: values.nome.trim(),
-          email: values.email.trim(),
-          telefone: values.telefone.trim(),
-        },
-        senha: values.senha,
-        animal: {
-          nome: values.petNome.trim(),
-          especie: values.especie.trim(),
-          raca: values.raca.trim(),
-          idade: Number(values.idade),
-        },
+          id: cliente.id
+        }
       };
 
-      // Simulação de chamada de API
-      await new Promise((r) => setTimeout(r, 800));
-      console.log('Cadastro payload', payload);
+      console.log('Dados do animal a serem enviados:', JSON.stringify(animalData, null, 2));
 
-      setErrors({ sucesso: 'Cadastro realizado com sucesso! Você já pode realizar agendamentos.' });
-      // Redirecionar após sucesso? Ex.: window.location.href = '/login';
-    } catch (err) {
-      setErrors({ geral: 'Não foi possível concluir o cadastro. Tente novamente.' });
-    } finally {
-      setLoading(false);
+      // 2. Depois de criar o cliente com sucesso, criar o animal associado
+      const animal = await createAnimal(animalData);
+      console.log('Animal criado com sucesso:', animal);
+
+      // 3. Se tudo der certo, mostrar mensagem de sucesso e redirecionar
+      setErrors({ 
+        sucesso: 'Cadastro realizado com sucesso! Redirecionando para o login...' 
+      });
+      
+      // Redirecionar para login após 2 segundos
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     }
-  };
-
+  } catch (error: any) {
+    console.error('Erro detalhado:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers,
+      config: error.config
+    });
+    
+    let errorMessage = 'Não foi possível concluir o cadastro. Tente novamente.';
+    
+    if (error.response) {
+      // Erro vindo da API
+      if (error.response.status === 400) {
+        errorMessage = error.response.data?.message || 'Dados inválidos. Verifique as informações e tente novamente.';
+      } else if (error.response.status === 409) {
+        errorMessage = 'Este e-mail já está em uso. Tente fazer login ou usar outro e-mail.';
+      } else if (error.response.data) {
+        // Tenta mostrar a mensagem de erro do servidor, se disponível
+        errorMessage = error.response.data.message || errorMessage;
+      }
+    }
+    
+    setErrors({ geral: errorMessage });
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-white flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-2xl">
@@ -309,23 +367,18 @@ const CadastroPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="idade" className="block text-sm font-medium text-slate-700">Idade</label>
+                  <label htmlFor="dataNascimento" className="block text-sm font-medium text-slate-700">Data de Nascimento</label>
                   <input
-                    id="idade"
-                    name="idade"
-                    type="text"
-                    inputMode="numeric"
+                    id="dataNascimento"
+                    name="dataNascimento"
+                    type="date"
                     required
-                    value={values.idade}
-                    onChange={(e) => {
-                      // somente números
-                      const next = e.target.value.replace(/[^\d]/g, '');
-                      handleChange({ ...e, target: { ...e.target, name: 'idade', value: next } } as any);
-                    }}
+                    value={values.dataNascimento}
+                    onChange={handleChange}
                     className="mt-1 w-full rounded-xl border-slate-300 focus:border-teal-500 focus:ring-teal-500 text-slate-900"
-                    placeholder="Ex.: 3"
+                    max={new Date().toISOString().split('T')[0]}
                   />
-                  {errors.idade && <p className="mt-1 text-xs text-red-600">{errors.idade}</p>}
+                  {errors.dataNascimento && <p className="mt-1 text-xs text-red-600">{errors.dataNascimento}</p>}
                 </div>
               </div>
             </section>

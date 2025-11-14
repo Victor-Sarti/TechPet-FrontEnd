@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { finalizarAgendamento } from '../services/agendamento'
 
 type Agendamento = {
   id: string
