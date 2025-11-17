@@ -82,6 +82,26 @@ const AuthPage: React.FC = () => {
               />
             </div>
 
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="terms"
+                  name="terms"
+                  type="checkbox"
+                  required
+                  className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="terms" className="font-medium text-slate-700">
+                  Li e concordo com o <span className="font-semibold text-teal-700">Termo de Uso e Privacidade</span>
+                </label>
+                <p className="text-slate-500 text-xs mt-1">
+                  Seus dados serão usados apenas para cadastro e agendamento de serviços na TechPet, sem compartilhamento indevido com terceiros.
+                </p>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
