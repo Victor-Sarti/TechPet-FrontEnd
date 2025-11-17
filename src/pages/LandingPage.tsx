@@ -154,6 +154,12 @@ const Vantagens: React.FC<SectionProps> = ({ id = 'vantagens' }) => {
   return (
     <section id={id} className="py-12 sm:py-16 bg-gradient-to-b from-white to-sky-50/60">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Vantagens</h2>
+          <p className="mt-3 text-slate-600">
+            Conheça as vantagens de usar nossa plataforma para cuidar do seu pet.
+          </p>
+        </div>
         <div className="grid md:grid-cols-3 gap-6">
           {items.map((it) => (
             <div
@@ -203,7 +209,7 @@ const Footer: React.FC = () => {
           </div>
           <div className="space-y-1 text-sm">
             <div className="text-slate-900 font-semibold">Contato</div>
-            <div className="text-slate-600">WhatsApp: (00) 90000-0000</div>
+            <div className="text-slate-600">WhatsApp: (11) 96224-5844</div>
             <div className="text-slate-600">Email: contato@vivipetshopmovel.com</div>
             <div className="flex gap-3 pt-1">
               <a
