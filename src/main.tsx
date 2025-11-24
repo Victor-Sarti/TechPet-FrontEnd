@@ -10,6 +10,7 @@ import AgendarPage from './pages/AgendarPage'
 import MeusAgendamentos from './pages/MeusAgendamentos'
 import LoginFuncionario from './pages/LoginFuncionario'
 import FuncionarioDashboard from './pages/FuncinarioDashboard'
+import AgendamentosFuncionario from './pages/AgendamentosFuncionario'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/agendamentos" element={<MeusAgendamentos />} />
         <Route path="/equipe/login" element={<LoginFuncionario />} />
         <Route path="/equipe/dashboard" element={<FuncionarioDashboard />} />
+        <Route path="/equipe/agendamentos" element={<AgendamentosFuncionario />} />
       </Routes>
     </BrowserRouter> 
   </StrictMode>,

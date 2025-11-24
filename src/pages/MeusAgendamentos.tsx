@@ -30,8 +30,8 @@ function formatCurrencyBRL(value: number) {
 const mockData: AgendamentoListItem[] = [
   {
     id: "ag-1",
-    nomeDoPet: "Rex",
-    servico: "Banho Simples",
+    nomeDoPet: "Max",
+    servico: "Banho e Tosa",
     dataInicio: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // amanhã
     dataFinal: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
     finalizado: false,
@@ -39,39 +39,12 @@ const mockData: AgendamentoListItem[] = [
   },
   {
     id: "ag-2",
-    nomeDoPet: "Luna",
-    servico: "Tosa Completa",
-    dataInicio: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // +3 dias
-    dataFinal: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
-    finalizado: false,
-    valorFinal: null,
-  },
-  {
-    id: "ag-3",
     nomeDoPet: "Bob",
-    servico: "Banho e Tosa",
+    servico: "Tosa Completa",
     dataInicio: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // -6 dias
     dataFinal: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
     finalizado: true,
     valorFinal: 80,
-  },
-  {
-    id: "ag-4",
-    nomeDoPet: "Mel",
-    servico: "Banho Simples",
-    dataInicio: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // -2 dias
-    dataFinal: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
-    finalizado: true,
-    valorFinal: 50,
-  },
-  {
-    id: "ag-5",
-    nomeDoPet: "Thor",
-    servico: "Hidratação",
-    dataInicio: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // +5 dias
-    dataFinal: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
-    finalizado: false,
-    valorFinal: null,
   },
 ];
 
@@ -171,13 +144,13 @@ const MeusAgendamentos: React.FC = () => {
                       <div className="text-slate-800 font-medium">
                         {a.finalizado
                           ? formatCurrencyBRL(a.valorFinal ?? 0)
-                          : "Pendente"}
+                          : "120,00"}
                       </div>
                     </div>
                     <div className="rounded-lg bg-slate-50 border border-slate-200 p-3">
                       <div className="text-slate-500">Status</div>
                       <div className="text-slate-800 font-medium">
-                        {a.finalizado ? "Concluído" : "Em aberto"}
+                        {a.finalizado ? "Concluído" : "Em Aberto"}
                       </div>
                     </div>
                   </div>

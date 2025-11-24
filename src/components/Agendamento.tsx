@@ -27,8 +27,7 @@ type AgendamentoWizardProps = {
 };
 
 const defaultPets: PetOption[] = [
-  { id: "pet-1", nome: "Rex" },
-  { id: "pet-2", nome: "Luna" },
+  { id: "pet-1", nome: "Max" }
 ];
 
 const defaultServicos: ServicoOption[] = [
@@ -39,8 +38,17 @@ const defaultServicos: ServicoOption[] = [
 
 function fmtDateISO(date: Date, timeHHMM: string) {
   const [h, m] = timeHHMM.split(":").map(Number);
-  const d = new Date(date);
-  d.setHours(h, m, 0, 0);
+  // Cria uma nova data com os componentes separados para evitar problemas de fuso horário
+  const d = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    h,
+    m,
+    0,
+    0
+  );
+  // Retorna a data no formato ISO sem a parte do fuso horário
   return d.toISOString();
 }
 
@@ -235,7 +243,6 @@ export default function AgendamentoWizard({
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-gray-500">O horário selecionado define o início do atendimento. O cálculo de dataFinal e valorFinal será feito pelo backend.</p>
             </div>
           </div>
         )}
@@ -248,11 +255,13 @@ export default function AgendamentoWizard({
               <div className="mt-2 text-sm text-gray-700">Serviço</div>
               <div className="font-medium">{servicoNome}</div>
               <div className="mt-2 text-sm text-gray-700">Data</div>
-              <div className="font-medium">{new Date(dateStr).toLocaleDateString()}</div>
+              <div className="font-medium">
+                {new Date(selectedDate).toLocaleDateString('pt-BR')}
+              </div>
               <div className="mt-2 text-sm text-gray-700">Horário</div>
               <div className="font-medium">{time}</div>
-              <div className="mt-3 text-sm text-gray-700">Valor Estimado (A ser confirmado pelo Pet Shop):</div>
-              <div className="text-lg font-semibold text-emerald-700">R$ 50,00</div>
+              <div className="mt-3 text-sm text-gray-700">Valor:</div>
+              <div className="text-lg font-semibold text-emerald-700">R$ 120,00</div>
             </div>
           </div>
         )}
